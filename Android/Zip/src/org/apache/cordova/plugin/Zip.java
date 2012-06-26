@@ -22,7 +22,7 @@
  * THE SOFTWARE.
 */
 
-package org.apache.cordova.plugin;
+package org.apache.cordova.plugin.zip;
 
 import java.io.File;
 import java.io.InputStream;
@@ -31,8 +31,10 @@ import java.io.BufferedOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -93,12 +95,12 @@ public class Zip extends Plugin {
 				}
 				*/
 			} else if (action.equals("uncompress")) {
-				
+
 				JSONObject ret = this.uncompress(source, target, callbackId);
 				ret.put("completed", true);
 
 				// Purge action only data structures.
-				this.processedEntities.clear();				
+				this.processedEntities.clear();
 
 				return new PluginResult(PluginResult.Status.OK, ret);
 				/*
@@ -106,7 +108,7 @@ public class Zip extends Plugin {
 					return new PluginResult(status, result);
 				} else {
 					return new PluginResult(PluginResult.Status.ERROR, result);
-				}			
+				}
 				*/
 			}
 			return new PluginResult(PluginResult.Status.JSON_EXCEPTION);
@@ -171,7 +173,7 @@ public class Zip extends Plugin {
 	*/
 	private JSONObject uncompress(String source, String target, String callbackId) throws IOException, JSONException, InterruptedException
 	{
-		Log.d(LOG_TAG, "uncompress: " + source + " to " + target); 
+		Log.d(LOG_TAG, "uncompress: " + source + " to " + target);
 
 		List<String> extractedEntities = new ArrayList<String>();
 
@@ -186,17 +188,22 @@ public class Zip extends Plugin {
 
 		ZipFile zipFile = new ZipFile(sourceFile);
 		Enumeration zipEntities = zipFile.entries();
-		
-		String targetPath = targetFile.getAbsolutePath() + DIRECTORY_SEPARATOR + zipFile.getName().substring(0, zipFile.getName().length() - 4);
+        ArrayList zipList = Collections.list(zipEntities);
+        int totalFiles = zipList.size();
+
+        String targetPath = "";
 
 		JSONObject lastMsg = new JSONObject();
 
 		// TODO: Handle possible cancelation.
-		while (zipEntities.hasMoreElements()) {
-			ZipEntry entity = (ZipEntry) zipEntities.nextElement();
+        Iterator it = zipList.iterator();
+		while (it.hasNext()) {
+
+			ZipEntry entity = (ZipEntry) it.next();
 			Log.d(LOG_TAG, "Current entity: " + entity.getName());
 
-			File currentTarget = new File(targetPath, entity.getName());
+            targetPath = targetFile.getAbsolutePath() + DIRECTORY_SEPARATOR + entity.getName();
+			File currentTarget = new File(targetPath);
 			File currentTargetParent = currentTarget.getParentFile();
 			lastMsg = this.publish(currentTargetParent, callbackId);
 			currentTargetParent.mkdirs();
@@ -205,7 +212,7 @@ public class Zip extends Plugin {
 
 			if (!entity.isDirectory()) {
 
-				lastMsg = this.publish(currentTarget, callbackId);
+				lastMsg = this.publish(currentTarget, totalFiles, callbackId);
 				BufferedInputStream is = new BufferedInputStream(zipFile.getInputStream(entity));
 				FileOutputStream fos = new FileOutputStream(currentTarget);
 				BufferedOutputStream dest = new BufferedOutputStream(fos, BUFFER_SIZE);
@@ -221,23 +228,24 @@ public class Zip extends Plugin {
 
 				this.processedEntities.add(currentTarget.getAbsolutePath());
 			}
-			
+
 		}
 
 		return lastMsg;
 	}
 
-	private JSONObject publish(File file, String callbackId) throws JSONException, InterruptedException
+	private JSONObject publish(File file, int totalFiles, String callbackId) throws JSONException, InterruptedException
 	{
 		JSONObject msg = new JSONObject();
 
 		// Using FileUtils::getEntry to create an file info structure.
 		FileUtils fu = new FileUtils();
 		msg = fu.getEntry(file);
-		
+
 		// Add new params for progress calculation.
 		msg.put("completed", false);
 		msg.put("progress", this.processedEntities.size());
+		msg.put("total", totalFiles);
 
 		PluginResult result = new PluginResult(PluginResult.Status.OK, msg);
 		result.setKeepCallback(true);
