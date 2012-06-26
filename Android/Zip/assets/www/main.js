@@ -18,7 +18,14 @@
 */
 
 function fail(error) {
+	console.log(error.source);
+	console.log(error.target);
 	console.log(error.code);
+}
+
+function getEntityFail(fileError) {
+	console.log("FileError!");
+	console.log("code: "+fileError.code);
 }
 
 var deviceInfo = function() {
@@ -31,6 +38,23 @@ var deviceInfo = function() {
     document.getElementById("colorDepth").innerHTML = screen.colorDepth;
 };
 
+function displayZipInfo (zipEntry) {
+    document.getElementById("zip_name").innerHTML = zipEntry.name;
+    document.getElementById("zip_fullpath").innerHTML = zipEntry.fullPath;
+    document.getElementById("zip_entries").innerHTML = zipEntry.entries;
+}
+
+function zipInfo() {
+
+	var source = "test.zip";
+
+	window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, function (fileSystem) {
+                fileSystem.root.getFile(source, null, function (fileEntry) {
+			window.plugins.Zip.info(fileEntry.fullPath, displayZipInfo, function(){});
+                }, getEntityFail);
+        }, fail);
+}
+
 function successListener (msg) {
 	console.log("isFile: " + msg.isFile);
 	console.log("isDirectory: " + msg.isDirectory);
@@ -41,12 +65,25 @@ function successListener (msg) {
 }
 
 function uncompressFromSDCard() {
-	window.plugins.Zip.uncompress("file:///mnt/sdcard/test.zip", "", successListener, function(){});
+	console.log("uncompressFromSDCard");
+	var source = "test.zip";
+	var target = "/";
+
+	window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, function (fileSystem) {
+		console.log("request file system");
+		fileSystem.root.getFile(source, {create: false, exclusive: false}, function (fileEntry) {
+			console.log("request file:" + source);
+			fileSystem.root.getDirectory(target, {create: true, exclusive: false}, function (directoryEntry) {
+				console.log("request dir:" + target);
+				window.plugins.Zip.uncompress(fileEntry.fullPath, directoryEntry.fullPath, successListener, function(){});
+			}, getEntityFail);
+		}, getEntityFail);
+	}, fail);
 }
 
 function uncompressFromURL() {
 
-	var url = "http://url_to_zip";
+	var url = "http://www.litio.org/tmp/test.zip";
 	var targetName = "test.zip";
 
 	window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, function (fileSystem) {
@@ -54,6 +91,7 @@ function uncompressFromURL() {
 		fileSystem.root.getFile(targetName, {create: true, exclusive: true}, function (fileEntry) {
 
 			var localPath = fileEntry.fullPath;
+			console.log("++++ localPath: "+localPath);
 			
 			/*
 			if (device.platform === "Android" && localPath.indexof("file://") === 0) {
@@ -79,19 +117,22 @@ function uncompressFromURL() {
 		}, fail);
 	}, fail);
 
+}
+
+
+function uncompress(source, target) {
+
+	console.log("uncompress("+source+","+target+")");
 	window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, function (fileSystem) {
 
-		fileSystem.root.getFile(targetName, null, function (fileEntry) {
+		fileSystem.root.getFile(target, null, function (fileEntry) {
 
 			var localPath = fileEntry.fullPath;
 			var zip = window.plugins.Zip;
-			zip.uncompress(localPath, "/tmp", successListener, function (){});
+			zip.uncompress(source, target, successListener, fail);
 
 		}, fail);
-
 	}, fail);
-
-	
 }
 
 function compress() {
