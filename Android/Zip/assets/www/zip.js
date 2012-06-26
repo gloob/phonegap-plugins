@@ -29,9 +29,19 @@ function Zip() {
 };
 
 /**
- * Define method Zip::compress().
+ * Define method Zip::info().
  */
 Zip.prototype.info = function(source, successCallback, errorCallback) {
+
+	if (successCallback && (typeof successCallback !== "function")) {
+		console.log("Zip Error: successCallback is not a function");
+		return;
+	}
+
+	if (errorCallback && (typeof errorCallback !== "function")) {
+		console.log("Zip Error: errorCallback is not a function");
+		return;
+	}
 
         PhoneGap.exec(successCallback, errorCallback, "Zip", "info", [source]);
 };
