@@ -38,6 +38,7 @@ import java.util.Collections;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+import java.util.zip.ZipException;
 
 import org.apache.cordova.api.Plugin;
 import org.apache.cordova.api.PluginResult;
@@ -76,15 +77,16 @@ public class Zip extends Plugin {
 		try {
 			// Parse common args
 			String source = args.getString(0);
-			String target = args.getString(1);
 
 			if (action.equals("info")) {
 
-				JSONObject info = this.info(source);
+				JSONObject zipInfo = this.info(source);
 
-				return new PluginResult(status, info);
+				return new PluginResult(status, zipInfo);
 
 			} else if (action.equals("compress")) {
+
+				String target = args.getString(1);
 
 				return new PluginResult(status, result);
 				/*
@@ -95,6 +97,8 @@ public class Zip extends Plugin {
 				}
 				*/
 			} else if (action.equals("uncompress")) {
+
+				String target = args.getString(1);
 
 				JSONObject ret = this.uncompress(source, target, callbackId);
 				ret.put("completed", true);
@@ -128,7 +132,10 @@ public class Zip extends Plugin {
 	* @return		T=returns value
 	*/
 	public boolean isSynch(String action) {
-		if (action.equals("compress")) {
+		if (action.equals("info")) {
+			return false;
+		}
+		else if (action.equals("compress")) {
 			return true;
 		}
 		else if (action.equals("uncompress")) {
@@ -142,13 +149,24 @@ public class Zip extends Plugin {
 	* Info.
 	*
 	* @param source		The action to execute.
-	* @return			True if all went fine, false otherwise.
+	* @return		A ZipFileEntry structure.
 	*/
-	private JSONObject info(String source) {
+	private JSONObject info(String source) throws JSONException, ZipException, IOException {
 
-		JSONObject info = new JSONObject();
+		source = FileUtils.stripFileProtocol(source);
 
-		return info;
+		File sourceFile = new File(source);
+		ZipFile zipFile = new ZipFile(sourceFile);
+
+		JSONObject zipInfo = new JSONObject();
+
+		// Using FileUtils::getEntry to create an file info structure.
+		FileUtils fu = new FileUtils();
+		zipInfo = fu.getEntry(sourceFile);
+
+		zipInfo.put("entries", zipFile.size());
+
+		return zipInfo;
 	}
 
 	/**
@@ -188,21 +206,20 @@ public class Zip extends Plugin {
 
 		ZipFile zipFile = new ZipFile(sourceFile);
 		Enumeration zipEntities = zipFile.entries();
-        ArrayList zipList = Collections.list(zipEntities);
-        int totalFiles = zipList.size();
+		ArrayList zipList = Collections.list(zipEntities);
 
-        String targetPath = "";
+		String targetPath = "";
 
 		JSONObject lastMsg = new JSONObject();
 
 		// TODO: Handle possible cancelation.
-        Iterator it = zipList.iterator();
+		Iterator it = zipList.iterator();
 		while (it.hasNext()) {
 
 			ZipEntry entity = (ZipEntry) it.next();
 			Log.d(LOG_TAG, "Current entity: " + entity.getName());
 
-            targetPath = targetFile.getAbsolutePath() + DIRECTORY_SEPARATOR + entity.getName();
+			targetPath = targetFile.getAbsolutePath() + DIRECTORY_SEPARATOR + entity.getName();
 			File currentTarget = new File(targetPath);
 			File currentTargetParent = currentTarget.getParentFile();
 			lastMsg = this.publish(currentTargetParent, callbackId);
@@ -226,7 +243,7 @@ public class Zip extends Plugin {
 				is.close();
 
 				this.processedEntities.add(currentTarget.getAbsolutePath());
-				lastMsg = this.publish(currentTarget, totalFiles, callbackId);
+				lastMsg = this.publish(currentTarget, callbackId);
 			}
 
 		}
@@ -234,7 +251,7 @@ public class Zip extends Plugin {
 		return lastMsg;
 	}
 
-	private JSONObject publish(File file, int totalFiles, String callbackId) throws JSONException, InterruptedException
+	private JSONObject publish(File file, String callbackId) throws JSONException, InterruptedException
 	{
 		JSONObject msg = new JSONObject();
 
@@ -245,7 +262,6 @@ public class Zip extends Plugin {
 		// Add new params for progress calculation.
 		msg.put("completed", false);
 		msg.put("progress", this.processedEntities.size());
-		msg.put("total", totalFiles);
 
 		PluginResult result = new PluginResult(PluginResult.Status.OK, msg);
 		result.setKeepCallback(true);
