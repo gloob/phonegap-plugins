@@ -212,7 +212,6 @@ public class Zip extends Plugin {
 
 			if (!entity.isDirectory()) {
 
-				lastMsg = this.publish(currentTarget, totalFiles, callbackId);
 				BufferedInputStream is = new BufferedInputStream(zipFile.getInputStream(entity));
 				FileOutputStream fos = new FileOutputStream(currentTarget);
 				BufferedOutputStream dest = new BufferedOutputStream(fos, BUFFER_SIZE);
@@ -227,6 +226,7 @@ public class Zip extends Plugin {
 				is.close();
 
 				this.processedEntities.add(currentTarget.getAbsolutePath());
+				lastMsg = this.publish(currentTarget, totalFiles, callbackId);
 			}
 
 		}
