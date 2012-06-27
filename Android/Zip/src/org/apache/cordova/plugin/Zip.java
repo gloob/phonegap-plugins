@@ -222,10 +222,7 @@ public class Zip extends Plugin {
 			targetPath = targetFile.getAbsolutePath() + DIRECTORY_SEPARATOR + entity.getName();
 			File currentTarget = new File(targetPath);
 			File currentTargetParent = currentTarget.getParentFile();
-			lastMsg = this.publish(currentTargetParent, callbackId);
 			currentTargetParent.mkdirs();
-
-			this.processedEntities.add(currentTargetParent.getAbsolutePath());
 
 			if (!entity.isDirectory()) {
 
