@@ -52,7 +52,13 @@ function info() {
 }
 
 function uncompressFromSDCard() {
-	window.plugins.Zip.uncompress("file:///mnt/sdcard/test.zip", "", successListener, function(){});
+    var targetName = "/test.zip";
+    
+    window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, function (fileSystem) {
+        fileSystem.root.getFile(targetName, null, function (fileEntry) {
+            window.plugins.Zip.uncompress(fileEntry.fullPath, "", successListener);
+        }, fail);
+    }, fail);
 }
 
 function uncompressFromURL() {
