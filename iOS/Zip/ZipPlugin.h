@@ -22,6 +22,7 @@
  * THE SOFTWARE.
  */
 
+#import <Foundation/Foundation.h>
 #import <Cordova/CDVPlugin.h>
 
 @interface ZipPlugin : CDVPlugin {
