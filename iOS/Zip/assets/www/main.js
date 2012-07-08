@@ -38,10 +38,17 @@ function successListener (msg) {
 	console.log("fullPath: " + msg.fullPath);
 	console.log("completed: " + msg.completed);
 	console.log("progress: " + msg.progress);
+    console.log("entries: " + msg.entries);
 }
 
 function info() {
-    window.plugins.Zip.info("/Users/aleiva/Library/Application Support/iPhone Simulator/4.3.2/Applications/FF1D8AA6-5D7F-4684-B3A5-28B8245F581E/Documents/test.zip");
+    var targetName = "/test.zip";
+    
+    window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, function (fileSystem) {
+        fileSystem.root.getFile(targetName, null, function (fileEntry) {
+            window.plugins.Zip.info(fileEntry.fullPath, successListener);
+        }, fail);
+    }, fail);
 }
 
 function uncompressFromSDCard() {

@@ -49,15 +49,25 @@
         for (FileInZipInfo *info in infos) {
             NSLog(@"FILE - %@ %@ %d (%d)", info.name, info.date, info.size, info.level);
         }
-
-		for (FileInZipInfo *info in infos) {
-			NSString *fileInfo= [NSString stringWithFormat:@"- %@ %@ %d (%d)", info.name, info.date, info.size, info.level];
-		}
         
         NSInteger entries = [unzipFile numFilesInZip];
         NSLog(@"Entries: %d", entries);
         
         [unzipFile close];
+        
+        // TODO: Use CDVFile getDirectoryEntry, it provides the same info as a NSDictionary.
+        NSMutableDictionary* zipEntry = [NSMutableDictionary dictionaryWithCapacity:5];
+        NSString* lastPart = [source lastPathComponent];
+        
+        [zipEntry setObject:[NSNumber numberWithBool: YES]  forKey:@"isFile"];
+        [zipEntry setObject:[NSNumber numberWithBool: NO]  forKey:@"isDirectory"];
+        [zipEntry setObject: source forKey: @"fullPath"];
+        [zipEntry setObject: lastPart forKey:@"name"];
+        [zipEntry setObject:[NSNumber numberWithInteger: entries] forKey:@"entries"];
+
+        result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:zipEntry];
+        jsString = [result toSuccessCallbackString:callbackId];
+        
     }
     @catch (ZipException *ze) {
         NSLog(@"ZipException caught: %d - %@", ze.error, [ze reason]);
