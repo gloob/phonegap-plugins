@@ -83,12 +83,23 @@
         if (jsString != nil)
             [self writeJavascript: jsString];
     }
-   
 }
 
 - (void) compress:(NSMutableArray *)arguments withDict:(NSMutableDictionary *)options
 {
+    NSString* callbackId = [arguments pop];
+    VERIFY_ARGUMENTS(arguments, 1, callbackId)
     
+    CDVPluginResult *result = nil;
+    NSString *jsString = nil;
+    
+    NSString *source = [arguments objectAtIndex:0];
+    NSString *target = [arguments objectAtIndex:1];
+    NSLog(@"source: %@ target: %@", source, target);
+    
+    //TODO: Implement it!
+    
+    [self writeJavascript: jsString];
 }
 
 - (void) uncompress:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options
@@ -105,5 +116,6 @@
     
     [self writeJavascript: jsString];
 }
+
 
 @end
