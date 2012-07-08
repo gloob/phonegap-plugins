@@ -80,7 +80,8 @@
         jsString = [result toErrorCallbackString:callbackId];
     }
     @finally {
-        [self writeJavascript: jsString];
+        if (jsString != nil)
+            [self writeJavascript: jsString];
     }
    
 }
