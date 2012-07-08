@@ -104,15 +104,106 @@
 
 - (void) uncompress:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options
 {
+    // TODO: Handle exceptions.
+    
     NSString* callbackId = [arguments pop];
     VERIFY_ARGUMENTS(arguments, 1, callbackId)
     
+    CDVPluginResult *result = nil;
+    NSString *jsString = nil;
+    
+    // Obtain arguments.
+    NSString *source = [arguments objectAtIndex:0];
+    NSString *target = [arguments objectAtIndex:1];
+    
+    // Evaluate the destination path based on the source.
+    NSRange range = [source rangeOfString:@"/" options: NSBackwardsSearch];
+    NSString *sourcePath = [source substringToIndex:range.location];
+    
+    NSLog(@"uncompress - source: %@ sourcePath: %@ target: %@", source, sourcePath, target);
+    
+    ZipFile *unzipFile= [[ZipFile alloc] initWithFileName:source mode:ZipFileModeUnzip];
+    [unzipFile goToFirstFileInZip];
+    
+    for (int i = 0; i < [unzipFile numFilesInZip]; i++) {
+
+        FileInZipInfo *info = [unzipFile getCurrentFileInZipInfo];
+        NSLog(@"Processing: %@", info.name);
+        
+        // Checking if current entity is a file or a directory.
+        BOOL isDir;
+        if ([[info.name substringFromIndex:[info.name length] - 1] isEqualToString:@"/"]) {
+            isDir = YES;
+        } else {
+            isDir = NO;
+        }
+
+        // Creating target path.
+        NSString *targetPath = [sourcePath stringByAppendingPathComponent:info.name];
+        
+        if (isDir) {
+
+            NSFileManager *fileMgr = [[NSFileManager alloc] init];
+            
+            BOOL isDir;
+            if ([fileMgr fileExistsAtPath:targetPath isDirectory:&isDir] && isDir) {
+                NSLog(@"Directory %@ already exist.", targetPath);
+                [unzipFile goToNextFileInZip];
+                continue;
+            }
+            
+            NSError *error = nil;
+            BOOL success = [fileMgr createDirectoryAtPath:targetPath withIntermediateDirectories:YES attributes:nil error:&error];
+            
+            [fileMgr release];
+            
+            if (success) {
+                NSLog(@"Created directory: %@ at: %@", info.name, targetPath);
+            } else {
+                NSLog(@"Failed to create directory: %@ at: %@ with error:%@", info.name, targetPath, error.description);
+            }
+        } else {
+
+            ZipReadStream *read = [unzipFile readCurrentFileInZip];
+            NSMutableData *data = [[NSMutableData alloc] initWithLength:info.length];
+            
+            [read readDataWithBuffer:data];
+            [data writeToFile:targetPath atomically:NO];  
+            [data release];
+            [read finishedReading];
+            
+            NSLog(@"Extracted file: %@ at: %@", info.name, targetPath);
+        }
+
+        [self publish:targetPath isDirectory:isDir callback:callbackId];
+        [unzipFile goToNextFileInZip];
+    }
+
+    [unzipFile close];
+    [unzipFile release];
+
+    //result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:
+    jsString = [result toSuccessCallbackString:callbackId];
+    [self writeJavascript: jsString];
+}
+
+-(void) publish: (NSString*) fullPath isDirectory: (BOOL) isDir callback: (NSString *) callbackId
+{
     CDVPluginResult* result = nil;
     NSString* jsString = nil;
+
+    NSMutableDictionary* entry = [NSMutableDictionary dictionaryWithCapacity:6];
+    NSString* lastPart = [fullPath lastPathComponent];
     
-    NSString* source = [arguments objectAtIndex:0];
-    NSString* target = [arguments objectAtIndex:1];
-    NSLog(@"source: %@ target: %@", source, target);
+    [entry setObject:[NSNumber numberWithBool: !isDir]  forKey:@"isFile"];
+    [entry setObject:[NSNumber numberWithBool: isDir]  forKey:@"isDirectory"];
+    [entry setObject:fullPath forKey: @"fullPath"];
+    [entry setObject:lastPart forKey:@"name"];
+    [entry setObject:[NSNumber numberWithBool: NO] forKey:@"completed"];
+    [entry setObject:[NSNumber numberWithInteger:1] forKey:@"progress"];
+
+    result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:entry];
+    jsString = [result toSuccessCallbackString:callbackId];
     
     [self writeJavascript: jsString];
 }
