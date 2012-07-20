@@ -31,5 +31,6 @@
 - (void) info:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options;
 - (void) compress:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options;
 - (void) uncompress:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options;
+- (void) publish:(NSString*)fullPath isDirectory:(BOOL) isDir callback:(NSString *) callbackId;
 
 @end
