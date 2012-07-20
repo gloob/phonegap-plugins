@@ -65,6 +65,19 @@ function uncompressFromURL() {
 
 	var url = "http://10.42.0.1/test.zip";
 	var targetName = "/test.zip";
+    
+    
+    var uncompressFileEntry = function(fileEntry) {
+        
+        console.log(fileEntry);
+        
+        var localPath = fileEntry.fullPath;
+        var zip = window.plugins.Zip;
+        zip.uncompress(localPath, "/tmp", successListener, function () {
+                       console.error('ERROR zip.uncompress()');
+                       console.error(arguments);
+                       });
+    };
 
 	window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, function (fileSystem) {
 
@@ -86,6 +99,7 @@ function uncompressFromURL() {
 				function (entry) {
 					console.log("download complete: " + entry.fullPath);
 					console.log("+ info: " + entry);
+                    uncompressFileEntry(fileEntry);
 				},
 				function (error) {
 					console.log("download error source " + error.source);
@@ -94,21 +108,7 @@ function uncompressFromURL() {
 				}
 			);
 		}, fail);
-	}, fail);
-
-	window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, function (fileSystem) {
-
-		fileSystem.root.getFile(targetName, null, function (fileEntry) {
-
-			var localPath = fileEntry.fullPath;
-			var zip = window.plugins.Zip;
-			zip.uncompress(localPath, "/tmp", successListener, function (){});
-
-		}, fail);
-
-	}, fail);
-
-	
+	}, fail);	
 }
 
 function compress() {
