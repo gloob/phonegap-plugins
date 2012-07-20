@@ -199,7 +199,7 @@
     [entry setObject:lastPart forKey: @"name"];
     [entry setObject:[NSNumber numberWithBool: totalEntities == processedEntities] forKey: @"completed"];
     [entry setObject:[NSNumber numberWithInteger: processedEntities] forKey: @"progress"];
-    [entry setObject:[NSNumber numberWithInteger: totalEntities] forKey: @"total"];
+    [entry setObject:[NSNumber numberWithInteger: totalEntities] forKey: @"entries"];
 
     result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:entry];
     // IMPORTANT: Don't allow the javascript code unregister the callback so we can send more than one message.
