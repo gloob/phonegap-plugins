@@ -203,6 +203,8 @@
     [entry setObject:[NSNumber numberWithInteger:1] forKey:@"progress"];
 
     result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:entry];
+    // IMPORTANT: Don't allow the javascript code unregister the callback so we can send more than one message.
+    result.keepCallback = [NSNumber numberWithBool: YES];
     jsString = [result toSuccessCallbackString:callbackId];
     
     [self writeJavascript: jsString];
