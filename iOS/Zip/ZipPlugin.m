@@ -109,9 +109,6 @@
     NSString* callbackId = [arguments pop];
     VERIFY_ARGUMENTS(arguments, 1, callbackId)
     
-    CDVPluginResult *result = nil;
-    NSString *jsString = nil;
-    
     // Obtain arguments.
     NSString *source = [arguments objectAtIndex:0];
     NSString *target = [arguments objectAtIndex:1];
@@ -124,8 +121,10 @@
     
     ZipFile *unzipFile= [[ZipFile alloc] initWithFileName:source mode:ZipFileModeUnzip];
     [unzipFile goToFirstFileInZip];
+    int totalEntities = [unzipFile numFilesInZip];
+    processedEntities = 0;
     
-    for (int i = 0; i < [unzipFile numFilesInZip]; i++) {
+    for (int i = 0; i < totalEntities; i++) {
 
         FileInZipInfo *info = [unzipFile getCurrentFileInZipInfo];
         NSLog(@"Processing: %@", info.name);
@@ -172,22 +171,21 @@
             [data release];
             [read finishedReading];
             
+            processedEntities += 1;
+            
             NSLog(@"Extracted file: %@ at: %@", info.name, targetPath);
+            
+            [self publish:targetPath isDirectory:isDir totalEntities:totalEntities callback:callbackId];
+            [unzipFile goToNextFileInZip];
         }
 
-        [self publish:targetPath isDirectory:isDir callback:callbackId];
-        [unzipFile goToNextFileInZip];
     }
 
     [unzipFile close];
     [unzipFile release];
-
-    //result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:
-    jsString = [result toSuccessCallbackString:callbackId];
-    [self writeJavascript: jsString];
 }
 
--(void) publish: (NSString*) fullPath isDirectory: (BOOL) isDir callback: (NSString *) callbackId
+-(void) publish: (NSString*) fullPath isDirectory: (BOOL) isDir totalEntities:(int) totalEntities callback: (NSString *) callbackId
 {
     CDVPluginResult* result = nil;
     NSString* jsString = nil;
@@ -195,14 +193,17 @@
     NSMutableDictionary* entry = [NSMutableDictionary dictionaryWithCapacity:6];
     NSString* lastPart = [fullPath lastPathComponent];
     
-    [entry setObject:[NSNumber numberWithBool: !isDir]  forKey:@"isFile"];
-    [entry setObject:[NSNumber numberWithBool: isDir]  forKey:@"isDirectory"];
+    [entry setObject:[NSNumber numberWithBool: !isDir]  forKey: @"isFile"];
+    [entry setObject:[NSNumber numberWithBool: isDir]  forKey: @"isDirectory"];
     [entry setObject:fullPath forKey: @"fullPath"];
-    [entry setObject:lastPart forKey:@"name"];
-    [entry setObject:[NSNumber numberWithBool: NO] forKey:@"completed"];
-    [entry setObject:[NSNumber numberWithInteger:1] forKey:@"progress"];
+    [entry setObject:lastPart forKey: @"name"];
+    [entry setObject:[NSNumber numberWithBool: totalEntities == processedEntities] forKey: @"completed"];
+    [entry setObject:[NSNumber numberWithInteger: processedEntities] forKey: @"progress"];
+    [entry setObject:[NSNumber numberWithInteger: totalEntities] forKey: @"entries"];
 
     result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:entry];
+    // IMPORTANT: Don't allow the javascript code unregister the callback so we can send more than one message.
+    result.keepCallback = [NSNumber numberWithBool: YES];
     jsString = [result toSuccessCallbackString:callbackId];
     
     [self writeJavascript: jsString];
