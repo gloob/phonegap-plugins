@@ -207,6 +207,7 @@ public class Zip extends Plugin {
 		ZipFile zipFile = new ZipFile(sourceFile);
 		Enumeration zipEntities = zipFile.entries();
 		ArrayList zipList = Collections.list(zipEntities);
+        int totalEntities = zipList.size();
 
 		String targetPath = "";
 
@@ -240,7 +241,7 @@ public class Zip extends Plugin {
 				is.close();
 
 				this.processedEntities.add(currentTarget.getAbsolutePath());
-				lastMsg = this.publish(currentTarget, callbackId);
+				lastMsg = this.publish(currentTarget, totalEntities, callbackId);
 			}
 
 		}
@@ -248,21 +249,27 @@ public class Zip extends Plugin {
 		return lastMsg;
 	}
 
-	private JSONObject publish(File file, String callbackId) throws JSONException, InterruptedException
+	private JSONObject publish(File file, int totalEntities, String callbackId) throws JSONException, InterruptedException
 	{
 		JSONObject msg = new JSONObject();
+        boolean completed = totalEntities == this.processedEntities.size();
 
 		// Using FileUtils::getEntry to create an file info structure.
 		FileUtils fu = new FileUtils();
 		msg = fu.getEntry(file);
 
 		// Add new params for progress calculation.
-		msg.put("completed", false);
+		msg.put("completed", completed);
 		msg.put("progress", this.processedEntities.size());
 
 		PluginResult result = new PluginResult(PluginResult.Status.OK, msg);
 		result.setKeepCallback(true);
-		success(result, callbackId);
+
+        // Avoid to send the message "uncompress completed" twice.
+        // This message is sended in the execute method.
+        if (!completed) {
+		    success(result, callbackId);
+        }
 
 		Thread.sleep(100);
 
