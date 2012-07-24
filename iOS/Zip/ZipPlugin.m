@@ -141,30 +141,18 @@
         NSString *targetPath = [sourcePath stringByAppendingPathComponent:info.name];
         
         if (isDir) {
+            
+            [self createDirectory:targetPath];
 
-            NSFileManager *fileMgr = [[NSFileManager alloc] init];
-            
-            BOOL isDir;
-            if ([fileMgr fileExistsAtPath:targetPath isDirectory:&isDir] && isDir) {
-                NSLog(@"Directory %@ already exist.", targetPath);
-                [unzipFile goToNextFileInZip];
-                continue;
-            }
-            
-            NSError *error = nil;
-            BOOL success = [fileMgr createDirectoryAtPath:targetPath withIntermediateDirectories:YES attributes:nil error:&error];
-            
-            [fileMgr release];
-            
-            if (success) {
-                NSLog(@"Created directory: %@ at: %@", info.name, targetPath);
-            } else {
-                NSLog(@"Failed to create directory: %@ at: %@ with error:%@", info.name, targetPath, error.description);
-            }
         } else {
 
             ZipReadStream *read = [unzipFile readCurrentFileInZip];
             NSMutableData *data = [[NSMutableData alloc] initWithLength:info.length];
+            
+            // Check existence of base directory path, create it otherwise.
+            NSRange range = [targetPath rangeOfString:@"/" options: NSBackwardsSearch];
+            NSString *basePath = [targetPath substringToIndex:range.location];
+            [self createDirectory:basePath];
             
             [read readDataWithBuffer:data];
             [data writeToFile:targetPath atomically:NO];  
@@ -176,9 +164,9 @@
             NSLog(@"Extracted file: %@ at: %@", info.name, targetPath);
             
             [self publish:targetPath isDirectory:isDir totalEntities:totalEntities callback:callbackId];
-            [unzipFile goToNextFileInZip];
         }
-
+        
+        [unzipFile goToNextFileInZip];
     }
 
     [unzipFile close];
@@ -207,6 +195,31 @@
     jsString = [result toSuccessCallbackString:callbackId];
     
     [self writeJavascript: jsString];
+}
+
+-(BOOL) createDirectory: (NSString*) path
+{
+    NSFileManager *fileMgr = [[NSFileManager alloc] init];
+    
+    BOOL isDir;
+    if ([fileMgr fileExistsAtPath:path isDirectory:&isDir] && isDir) {
+        NSLog(@"Directory %@ already exists.", path);
+        return true;
+    }
+    
+    NSError *error = nil;
+    BOOL success = [fileMgr createDirectoryAtPath:path withIntermediateDirectories:YES attributes:nil error:&error];
+    
+    [fileMgr release];
+    
+    if (success) {
+        NSLog(@"Created directory: %@", path);
+        return true;
+    } else {
+        NSLog(@"Failed to create directory: %@ with error:%@", path, error.description);
+        return false;
+    }
+
 }
 
 
