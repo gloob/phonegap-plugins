@@ -138,7 +138,7 @@
         }
 
         // Creating target path.
-        NSString *targetPath = [sourcePath stringByAppendingPathComponent:info.name];
+        NSString *targetPath = [target stringByAppendingPathComponent:info.name];
         
         if (isDir) {
             
