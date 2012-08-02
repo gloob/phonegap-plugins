@@ -12,7 +12,7 @@ By Daniel Shookowsky
 <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
 ## Using the plugin ##
-The plugin creates the object `window.plugins.SmsPlugin` with one method:
+The plugin creates the object `window.plugins.sms` with one method:
  
 ### send ###
 Send an sms message.  For example:
