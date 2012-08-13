@@ -112,11 +112,18 @@
     // Obtain arguments.
     NSString *source = [arguments objectAtIndex:0];
     NSString *target = [arguments objectAtIndex:1];
+
+    NSArray *dirPaths;
+    NSString *docsDir;
+
+    dirPaths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+    docsDir = [dirPaths objectAtIndex:0];
+    target = [docsDir stringByAppendingPathComponent:target];
     
     // Evaluate the destination path based on the source.
     NSRange range = [source rangeOfString:@"/" options: NSBackwardsSearch];
     NSString *sourcePath = [source substringToIndex:range.location];
-    
+
     NSLog(@"uncompress - source: %@ sourcePath: %@ target: %@", source, sourcePath, target);
     
     ZipFile *unzipFile= [[ZipFile alloc] initWithFileName:source mode:ZipFileModeUnzip];
@@ -138,7 +145,7 @@
         }
 
         // Creating target path.
-        NSString *targetPath = [sourcePath stringByAppendingPathComponent:info.name];
+        NSString *targetPath = [target stringByAppendingPathComponent:info.name];
         
         if (isDir) {
             
@@ -152,6 +159,7 @@
             // Check existence of base directory path, create it otherwise.
             NSRange range = [targetPath rangeOfString:@"/" options: NSBackwardsSearch];
             NSString *basePath = [targetPath substringToIndex:range.location];
+
             [self createDirectory:basePath];
             
             [read readDataWithBuffer:data];

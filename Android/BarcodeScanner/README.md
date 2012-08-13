@@ -2,6 +2,11 @@
 Originally by Matt Kane
 Updates by Simon MacDonald
 
+## Choosing the right source directory ##
+
+If you are using PhoneGap 1.5.0 to 1.8.1 please use the 1.8.1 directory. If you have upgraded to PhoneGap version 2.0.0 or better please use the 2.0.0 directory.
+
+
 ## Adding the Plugin to your project ##
 
 1. Add the 'LibraryProject' into Eclipse. File -> New Android Project -> create project from existing source.
@@ -38,6 +43,11 @@ Updates by Simon MacDonald
         <category android:name="android.intent.category.DEFAULT"/>
       </intent-filter>
     </activity>`
+    
+9. And make sure you have the following permission in your AndroidManifest.xml file:
+
+    `<uses-permission android:name="android.permission.CAMERA" />`
+
 
 ## Using the plugin ##
 The plugin creates the object `window.plugins.barcodeScanner` with the method `scan(success, fail)`. 

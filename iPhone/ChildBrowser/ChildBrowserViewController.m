@@ -1,11 +1,7 @@
-//
-//  ChildBrowserViewController.m
-//
-//  Created by Jesse MacFadyen on 21/07/09.
-//  Copyright 2009 Nitobi. All rights reserved.
-//  Copyright (c) 2011, IBM Corporation
-//  Copyright 2011, Randy McMillan
-//
+///  Created by Jesse MacFadyen on 10-05-29.
+//  Copyright 2010 Nitobi. All rights reserved.
+//  Copyright 2012, Randy McMillan
+// Continued maintainance @RandyMcMillan 2010/2011/2012
 
 #import "ChildBrowserViewController.h"
 
@@ -16,7 +12,6 @@
 @synthesize supportedOrientations;
 @synthesize isImage;
 @synthesize delegate;
-@synthesize docController;
 
 /*
  // The designated initializer.  Override if you create the controller programmatically and want to perform customization that is not appropriate for viewDidLoad.
@@ -97,9 +92,8 @@
 	[backBtn release];
 	[fwdBtn release];
 	[safariBtn release];
-	[documentBtn release];
 	[spinner release];
-	[supportedOrientations release];
+	[ supportedOrientations release];
 	[super dealloc];
 }
 
@@ -110,14 +104,12 @@
 	{
 		[delegate onClose];		
 	}
-
     if ([self respondsToSelector:@selector(presentingViewController)]) { 
         //Reference UIViewController.h Line:179 for update to iOS 5 difference - @RandyMcMillan
         [[self presentingViewController] dismissViewControllerAnimated:YES completion:nil];
     } else {
         [[self parentViewController] dismissModalViewControllerAnimated:YES];
     }
-
 }
 
 -(IBAction) onDoneButtonPress:(id)sender
@@ -139,58 +131,17 @@
 	
 	if(isImage)
 	{
-		NSURL* pURL = [[ [NSURL alloc] initWithString:imageURL ] autorelease];
+		NSURL* pURL = [ [NSURL alloc] initWithString:imageURL ];
 		[ [ UIApplication sharedApplication ] openURL:pURL  ];
 	}
 	else
 	{
 		NSURLRequest *request = webView.request;
 		[[UIApplication sharedApplication] openURL:request.URL];
-	}	 
+	}
+
+	 
 }
-
-
-- (IBAction)onDocumentButtonPress:(id)sender
-{
-  NSURLRequest *request = webView.request;
-  NSURL *url = request.URL;
-  
-  NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
-  NSString *filePath = [NSString stringWithFormat:@"%@/%@", [paths objectAtIndex:0],@"child_browser_temp.pdf"];
-  
-  NSData *urlData = [NSData dataWithContentsOfURL:url];
-  [urlData writeToFile:filePath atomically:YES];
-  
-  docController = [[self setupControllerWithURL:[NSURL fileURLWithPath:filePath] usingDelegate:docControllerDelegate] retain];
-  
-  if (docController)
-  {
-    BOOL canOpen = [docController presentOpenInMenuFromBarButtonItem:documentBtn animated:NO];
-    [docController dismissMenuAnimated:NO];
-   
-    if (canOpen)
-    {
-      [docController presentOpenInMenuFromBarButtonItem:documentBtn animated:YES];    
-    }
-    else
-    {
-      UIAlertView *message = [[UIAlertView alloc] initWithTitle:@"Sorry!" message:@"No applications were found that support this filetype." delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil];
-      [message show];
-      [message release];
-    }
-  }
-}
-
-
-- (UIDocumentInteractionController *)setupControllerWithURL:(NSURL *)fileURL usingDelegate:(id <UIDocumentInteractionControllerDelegate>)interactionDelegate {
-  
-  UIDocumentInteractionController *interactionController =
-  [UIDocumentInteractionController interactionControllerWithURL: fileURL];
-  interactionController.delegate = interactionDelegate;
-  
-  return interactionController;
-}
-
 
 - (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation) interfaceOrientation 
 {
@@ -282,6 +233,7 @@
 }
 
 */
+
 
 
 @end
